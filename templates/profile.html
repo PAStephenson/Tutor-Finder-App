@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <!-- Left Column - Profile Details -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm profile-card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">My Profile</h2>
+                    
+                    <h5 class="section-title">Personal Details</h5>
+                    
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-md-4 text-center mb-3 mb-md-0">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto border" style="width: 150px; height: 150px;">
+                                    <span class="text-muted">No Image</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Name:</strong> {{ user.first_name|capfirst|default:"Not Set" }} {{ user.last_name|capfirst|default:"Not Set" }}</p>
+                                    <p><strong>Email:</strong> {{ user.email }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Date of Birth:</strong> {{ user.date_of_birth|date:"d M Y"|default:"Not Set" }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Display Bio -->
+                            <div class="mt-3">
+                                <strong>Bio:</strong><br>
+                                {% if user.bio %}
+                                    <p class="text-muted">{{ user.bio|linebreaks }}</p>
+                                {% else %}
+                                    <span class="text-muted">No bio set.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="section-title">Tutoring Details</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                             <p><strong>Cost per hour:</strong> {% if user.cost %}£{{ user.cost }}{% else %}Not Set{% endif %}</p>
+                        </div>
+                         <div class="col-md-6">
+                            <p><strong>Subjects:</strong>
+                                {% if user.subjects.all %}
+                                    <ul class="list-unstyled mb-0">
+                                    {% for subject in user.subjects.all %}
+                                        <li><span class="badge bg-secondary">{{ subject.name }}</span></li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    Not Set
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Display Subject Levels -->
+                            <p class="mt-3"><strong>Subject Levels:</strong>
+                                {% if user.subject_levels.all %}
+                                    <ul class="list-unstyled mb-0">
+                                    {% for level in user.subject_levels.all %}
+                                        <li><span class="badge bg-info text-dark">{{ level.name }}</span></li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    Not Set
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if not user.references_approved %}
+                    <h5 class="section-title">Reference Details</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Referee 1 Name:</strong> {{ user.referee1_name|default:"Not Set" }}</p>
+                            <p><strong>Referee 1 Email:</strong> {{ user.referee1_email|default:"Not Set" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Referee 2 Name:</strong> {{ user.referee2_name|default:"Not Set" }}</p>
+                            <p><strong>Referee 2 Email:</strong> {{ user.referee2_email|default:"Not Set" }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        {% if not user.documents_approved or not user.references_approved %}
+                            <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile &amp; Upload Details</a>
+                        {% else %}
+                             <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card shadow-sm status-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Document Status</h5>
+                    {% if user.documents_approved %}
+                        <div class="status-box approved">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span>Documents Approved</span>
+                        </div>
+                    {% else %}
+                        <div class="status-box pending">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-loader"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                            <span>Pending Admin Approval</span>
+                        </div>
+                        <p class="small mt-2">Please <a href="{% url 'edit_profile' %}">upload your QTS and DBS certificates</a>. An admin will review them shortly.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm status-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Reference Status</h5>
+                    {% if user.references_approved %}
+                        <div class="status-box approved">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span>References Approved</span>
+                        </div>
+                    {% else %}
+                         <div class="status-box pending">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-loader"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                            <span>Pending Admin Approval</span>
+                        </div>
+                        <p class="small mt-2">Please <a href="{% url 'edit_profile' %}">provide your referee details</a>. An admin will review them shortly.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm status-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">ID Check</h5>
+
+                    {% if user.id_check_completed %}
+                        <div class="status-box approved">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span>ID Check Complete</span>
+                        </div>
+                    {% else %}
+                         <div class="status-box pending">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span>Pending ID Check</span>
+                        </div>
+                        <p class="small mt-2">When your documents and references are approved you will receive an email from our ID check partners TrustID to complete an ID check.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

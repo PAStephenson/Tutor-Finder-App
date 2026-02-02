@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="display-4 fw-bold mb-4" style="color: var(--primary-color);">Welcome to TeacherTutor</h1>
+            
+            <p class="lead mb-5" style="font-size: 1.25rem; line-height: 1.8;">
+                At TeacherTutor, we keep things easy — just a one-time introducer’s fee and no ongoing commissions. 
+                Families get access to experienced, qualified teachers (all with QTS), and tutors keep every penny they earn.
+            </p>
+
+            <div class="ratio ratio-16x9 shadow rounded-3 overflow-hidden mb-5">
+                <iframe 
+                    src="https://www.youtube.com/embed/dpWoPoqEQog?rel=0" 
+                    title="TeacherTutor Video" 
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="py-5" style="background-color: #ffffff;">
+    <div class="container">
+        <div class="row g-5">
+            
+            <div class="col-md-6">
+                <div class="h-100 p-4 rounded-3" style="background-color: var(--light-gray); border-left: 5px solid var(--secondary-color);">
+                    <h2 class="mb-4" style="color: var(--primary-color);">Tutors</h2>
+                    <p class="mb-3">
+                        At TeacherTutor we believe tutors deserve full control of their work and their earnings. 
+                        That’s why we charge parents a simple one-off introducer’s fee — no lesson commissions, ever. 
+                        You keep 100% of what you earn while connecting with families who value quality teaching.
+                    </p>
+                    <p>
+                        Once approved, you’ll have your own profile where families can find you, get in touch, 
+                        and arrange a programme of study that suits you both.
+                    </p>
+                    {% if not user.is_authenticated %}
+                        <div class="mt-4">
+                            <a href="{% url 'signup' %}" class="btn btn-warning btn-lg">Join as a Tutor</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="h-100 p-4 rounded-3" style="background-color: var(--light-gray); border-left: 5px solid var(--accent-color);">
+                    <h2 class="mb-4" style="color: var(--primary-color);">Parents</h2>
+                    <p class="mb-3">
+                        At TeacherTutor.org, we are all about making quality tutoring easy to find and affordable for every family.
+                    </p>
+                    <p class="mb-3">
+                        We are busy building our amazing team of qualified teachers and can’t wait to launch soon!
+                    </p>
+                    <p class="fw-bold" style="color: var(--secondary-color);">
+                        Follow us on social media to stay in the loop — exciting things are just around the corner.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

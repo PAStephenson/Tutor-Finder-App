@@ -1,0 +1,22 @@
+# Python virtual environment.
+venv/
+
+# macOS folder settings.
+.DS_Store
+
+# Temporary file used by MacVim.
+*.swp
+
+# Environment variable file
+.env
+
+# Database file
+db.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Static files for Whitenoise
+Staticfiles/

@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm profile-card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Edit Profile</h2>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <h4 class="mb-3">Personal Details</h4>
+                        <div class="row g-3">
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.profile_picture.id_for_label }}" class="form-label">Profile Picture</label>
+                                {% if user.profile_picture %}
+                                    <div class="mb-3 d-flex align-items-center">
+                                        <img src="{{ user.profile_picture.url }}" alt="Current Profile Picture" class="rounded-circle img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                        <span class="text-muted small">Current picture</span>
+                                    </div>
+                                {% endif %}
+                                {{ form.profile_picture }}
+                                {% if form.profile_picture.errors %}
+                                    <div class="text-danger small">{{ form.profile_picture.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                                {{ form.date_of_birth }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="text-danger small">{{ form.date_of_birth.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.bio.id_for_label }}" class="form-label">Bio</label>
+                                {{ form.bio }}
+                                <div class="form-text">Tell students about yourself (max 1500 characters).</div>
+                                {% if form.bio.errors %}
+                                    <div class="text-danger small">{{ form.bio.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h4 class="mb-3">Tutoring Details</h4>
+                         <div class="row g-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.cost.id_for_label }}" class="form-label">Cost per hour (£)</label>
+                                {{ form.cost }}
+                                {% if form.cost.errors %}
+                                    <div class="text-danger small">{{ form.cost.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div id="subjects-container" class="mb-3">
+                            <label class="form-label">Subjects</label>
+                        </div>
+                        {% if form.subjects.errors %}
+                            <div class="text-danger small mb-3">{{ form.subjects.errors.0 }}</div>
+                        {% endif %}
+                        <button type="button" id="add-subject" class="btn btn-sm btn-outline-secondary mb-3">Add Another Subject</button>
+
+                        <div id="subject-levels-container" class="mb-3 mt-3">
+                            <label class="form-label">Subject Levels</label>
+                        </div>
+                        {% if form.subject_levels.errors %}
+                            <div class="text-danger small mb-3">{{ form.subject_levels.errors.0 }}</div>
+                        {% endif %}
+                        <button type="button" id="add-subject-level" class="btn btn-sm btn-outline-secondary mb-3">Add Another Level</button>
+
+                        
+                        {% if not user.documents_approved %}
+                        <hr class="my-4">
+                        <h4 class="mb-3">Document Uploads</h4>
+                        <div class="alert alert-info small">If you have already uploaded a document, re-uploading will replace the existing file.</div>
+                        <div class="mb-3">
+                            <label for="{{ form.qts_certificate.id_for_label }}" class="form-label">QTS Certificate</label>
+                            
+                            {% if user.qts_certificate %}
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary">Current:</span> <a href="{{ user.qts_certificate.url }}" target="_blank">View Document</a>
+                                </div>
+                            {% endif %}
+
+                            {{ form.qts_certificate }}
+                            {% if form.qts_certificate.errors %}
+                                <div class="text-danger small">{{ form.qts_certificate.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.dbs_certificate.id_for_label }}" class="form-label">DBS Certificate</label>
+                            
+                            {% if user.dbs_certificate %}
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary">Current:</span> <a href="{{ user.dbs_certificate.url }}" target="_blank">View Document</a>
+                                </div>
+                            {% endif %}
+
+                            {{ form.dbs_certificate }}
+                            {% if form.dbs_certificate.errors %}
+                                <div class="text-danger small">{{ form.dbs_certificate.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if not user.references_approved %}
+                        <hr class="my-4">
+                        <h4 class="mb-3">References</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.referee1_name.id_for_label }}" class="form-label">Referee 1 Name</label>
+                                {{ form.referee1_name }}
+                                {% if form.referee1_name.errors %}
+                                    <div class="text-danger small">{{ form.referee1_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.referee1_email.id_for_label }}" class="form-label">Referee 1 Email</label>
+                                {{ form.referee1_email }}
+                                {% if form.referee1_email.errors %}
+                                    <div class="text-danger small">{{ form.referee1_email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.referee2_name.id_for_label }}" class="form-label">Referee 2 Name</label>
+                                {{ form.referee2_name }}
+                                {% if form.referee2_name.errors %}
+                                    <div class="text-danger small">{{ form.referee2_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.referee2_email.id_for_label }}" class="form-label">Referee 2 Email</label>
+                                {{ form.referee2_email }}
+                                {% if form.referee2_email.errors %}
+                                    <div class="text-danger small">{{ form.referee2_email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="text-center mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg">Save Changes</button>
+                            <a href="{% url 'profile' %}" class="btn btn-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectsContainer = document.getElementById('subjects-container');
+    const addSubjectBtn = document.getElementById('add-subject');
+
+    const allSubjects = [
+        {% for subject in form.fields.subjects.queryset %}
+            { id: "{{ subject.pk }}", name: "{{ subject.name|escapejs }}" },
+        {% endfor %}
+    ];
+
+    const initialSubjects = [
+        {% for subject in user.subjects.all %}
+            "{{ subject.pk }}",
+        {% endfor %}
+    ];
+
+    function generateOptions() {
+        let optionsHTML = '<option value="">---------</option>';
+        allSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = subject.name;
+            optionsHTML += option.outerHTML;
+        });
+        return optionsHTML;
+    }
+
+    const subjectOptionsHTML = generateOptions();
+
+    function addSubjectSelect(selectedValue = null) {
+        const subjectDiv = document.createElement('div');
+        subjectDiv.classList.add('input-group', 'mb-2');
+        subjectDiv.innerHTML = `
+            <select name="subjects" class="form-select subject-select">
+                ${subjectOptionsHTML}
+            </select>
+            <button type="button" class="btn btn-danger remove-subject">&times;</button>
+        `;
+        
+        const selectElement = subjectDiv.querySelector('select');
+        if (selectedValue) {
+            selectElement.value = selectedValue;
+        }
+
+        subjectsContainer.appendChild(subjectDiv);
+        
+        subjectDiv.querySelector('.remove-subject').addEventListener('click', function() {
+            if (subjectsContainer.querySelectorAll('.subject-select').length > 1) {
+                subjectDiv.remove();
+            } else {
+                alert("You must have at least one subject.");
+            }
+        });
+    }
+    
+    if (initialSubjects.length > 0) {
+        initialSubjects.forEach(subjectId => {
+            addSubjectSelect(subjectId);
+        });
+    } else {
+        addSubjectSelect();
+    }
+
+    addSubjectBtn.addEventListener('click', function() {
+        addSubjectSelect();
+    });
+
+    const levelsContainer = document.getElementById('subject-levels-container');
+    const addLevelBtn = document.getElementById('add-subject-level');
+
+    const allLevels = [
+        {% for level in form.fields.subject_levels.queryset %}
+            { id: "{{ level.pk }}", name: "{{ level.name|escapejs }}" },
+        {% endfor %}
+    ];
+
+    const initialLevels = [
+        {% for level in user.subject_levels.all %}
+            "{{ level.pk }}",
+        {% endfor %}
+    ];
+
+    function generateLevelOptions() {
+        let optionsHTML = '<option value="">---------</option>';
+        allLevels.forEach(level => {
+            const option = document.createElement('option');
+            option.value = level.id;
+            option.textContent = level.name;
+            optionsHTML += option.outerHTML;
+        });
+        return optionsHTML;
+    }
+
+    const levelOptionsHTML = generateLevelOptions();
+
+    function addLevelSelect(selectedValue = null) {
+        const levelDiv = document.createElement('div');
+        levelDiv.classList.add('input-group', 'mb-2');
+        levelDiv.innerHTML = `
+            <select name="subject_levels" class="form-select subject-level-select">
+                ${levelOptionsHTML}
+            </select>
+            <button type="button" class="btn btn-danger remove-level">&times;</button>
+        `;
+        
+        const selectElement = levelDiv.querySelector('select');
+        if (selectedValue) {
+            selectElement.value = selectedValue;
+        }
+
+        levelsContainer.appendChild(levelDiv);
+        
+        levelDiv.querySelector('.remove-level').addEventListener('click', function() {
+            if (levelsContainer.querySelectorAll('.subject-level-select').length > 1) {
+                levelDiv.remove();
+            } else {
+                alert("You must have at least one level selected.");
+            }
+        });
+    }
+
+    if (initialLevels.length > 0) {
+        initialLevels.forEach(lvlId => addLevelSelect(lvlId));
+    } else {
+        addLevelSelect();
+    }
+
+    addLevelBtn.addEventListener('click', function() {
+        addLevelSelect();
+    });
+});
+</script>
+
+{% endblock %}
