@@ -31,7 +31,7 @@ ALLOWED_HOSTS = [
     'localhost', 
     'https://teachertutor.org',
     'https://www.teachertutor.org',
-    '.herokuapp.com'
+    'teacher-tutor-b359d41ebe84.herokuapp.com',
 ]
 
 INSTALLED_APPS = [
