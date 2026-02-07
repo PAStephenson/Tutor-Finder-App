@@ -29,7 +29,8 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = [
     '127.0.0.1', 
     'localhost', 
-    'reconcilable-cataclysmically-kris.ngrok-free.dev', 
+    'https://teachertutor.org',
+    'https://www.teachertutor.org',
     '.herokuapp.com'
 ]
 
@@ -166,6 +167,8 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://teachertutor.org',
+    'https://www.teachertutor.org',
     'https://*.herokuapp.com',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
