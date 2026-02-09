@@ -29,8 +29,8 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = [
     '127.0.0.1', 
     'localhost', 
-    'https://teachertutor.org',
-    'https://www.teachertutor.org',
+    'teachertutor.org',
+    'www.teachertutor.org',
     'teacher-tutor-b359d41ebe84.herokuapp.com',
 ]
 
