@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conversation with {% if viewer == 'parent' %}{{ conversation.tutor.first_name }}{% else %}{{ conversation.parent.first_name }}{% endif %} - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <a href="{% url 'message_inbox' %}" class="d-inline-block mb-3">&larr; Back to messages</a>
+
+            <div class="card shadow-sm profile-card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title mb-1">
+                        {% if viewer == 'parent' %}
+                            Conversation with {{ conversation.tutor.first_name|capfirst }} {{ conversation.tutor.last_name|capfirst }}
+                        {% else %}
+                            Conversation with {{ conversation.parent.first_name|capfirst }} {{ conversation.parent.last_name|capfirst }}
+                        {% endif %}
+                    </h2>
+
+                    <p class="small text-muted">We don't currently email you when a new message arrives — check back here for replies.</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    {% for message in thread_messages %}
+                        <div class="d-flex {% if message.sender == viewer %}justify-content-end{% else %}justify-content-start{% endif %} mb-3">
+                            <div class="p-3 rounded-3" style="max-width: 75%; background-color: {% if message.sender == viewer %}var(--primary-color); color: white;{% else %}var(--light-gray);{% endif %}">
+                                <div class="small {% if message.sender == viewer %}text-white-50{% else %}text-muted{% endif %} mb-1">
+                                    {{ message.get_sender_display }} &middot; {{ message.created_at|date:"d M Y, H:i" }}
+                                </div>
+                                <div>{{ message.body|linebreaks }}</div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">No messages yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.body.id_for_label }}" class="form-label">Reply</label>
+                            {{ form.body }}
+                            {{ form.body.errors }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Reply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

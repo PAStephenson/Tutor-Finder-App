@@ -143,6 +143,9 @@
 
                      <div class="text-center mt-3">
                         <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
+                        {% if parent_signup_enabled %}
+                            <p class="small text-muted">Looking for a tutor? <a href="{% url 'parent_signup' %}">Sign up as a parent</a> instead.</p>
+                        {% endif %}
                     </div>
 
                 </div>

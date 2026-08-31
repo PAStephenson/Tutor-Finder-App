@@ -15,6 +15,7 @@ import os
 import mimetypes
 import dj_database_url
 from dotenv import load_dotenv
+from django.contrib.messages import constants as message_constants
 
 mimetypes.add_type("text/css", ".css", True)
 
@@ -24,7 +25,9 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True' 
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+HIDE_PARENT_SIGNUP = os.environ.get('HIDE_PARENT_SIGNUP', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     '127.0.0.1', 
@@ -70,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.parent_signup_flag',
             ],
         },
     },
@@ -162,6 +166,10 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 LOGIN_REDIRECT_URL = 'profile'
 LOGOUT_REDIRECT_URL = 'home'
+
+MESSAGE_TAGS = {
+    message_constants.ERROR: 'danger',
+}
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

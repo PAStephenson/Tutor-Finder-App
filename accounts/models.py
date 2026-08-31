@@ -49,6 +49,15 @@ class SubjectLevel(models.Model):
         return self.name
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    ROLE_TUTOR = 'tutor'
+    ROLE_PARENT = 'parent'
+    ROLE_CHOICES = [
+        (ROLE_TUTOR, 'Tutor'),
+        (ROLE_PARENT, 'Parent'),
+    ]
+
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_TUTOR)
+
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
@@ -73,7 +82,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     references_approved = models.BooleanField(default=False)
     
     id_check_completed = models.BooleanField(default=False, verbose_name="ID Check Completed")
-    
+
+    welcome_email_sent = models.BooleanField(
+        default=False,
+        help_text="Admin use only - tick once the welcome email has been sent to this tutor."
+    )
+
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
@@ -88,6 +102,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     @property
+    def is_tutor(self):
+        return self.role == self.ROLE_TUTOR
+
+    @property
+    def is_parent(self):
+        return self.role == self.ROLE_PARENT
+
+    @property
     def is_profile_complete(self):
         if not self.documents_approved: return False
         if not self.references_approved: return False
@@ -96,3 +118,47 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         if not self.subjects.exists(): return False
         if not self.subject_levels.exists(): return False
         return True
+
+class NewsPost(models.Model):
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    published_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-published_at']
+
+    def __str__(self):
+        return self.title
+
+class Conversation(models.Model):
+    tutor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='conversations_as_tutor')
+    parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='conversations_as_parent')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['tutor', 'parent'], name='unique_conversation_per_tutor_parent'),
+        ]
+
+    def __str__(self):
+        return f"Conversation between {self.parent.email} and {self.tutor.email}"
+
+class Message(models.Model):
+    SENDER_PARENT = 'parent'
+    SENDER_TUTOR = 'tutor'
+    SENDER_CHOICES = [
+        (SENDER_PARENT, 'Parent'),
+        (SENDER_TUTOR, 'Tutor'),
+    ]
+
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.get_sender_display()} message in conversation #{self.conversation_id}"

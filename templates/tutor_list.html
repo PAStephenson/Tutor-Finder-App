@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Find a Tutor - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1 class="mb-4" style="color: var(--primary-color);">Find a Tutor</h1>
+
+    <form method="get" class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="q" class="form-label">Search</label>
+                    <input type="text" name="q" id="q" class="form-control" placeholder="Name or keyword" value="{{ query }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <select name="subject" id="subject" class="form-select">
+                        <option value="">Any subject</option>
+                        {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="level" class="form-label">Level</label>
+                    <select name="level" id="level" class="form-select">
+                        <option value="">Any level</option>
+                        {% for level in levels %}
+                            <option value="{{ level.id }}" {% if selected_level == level.id|stringformat:"s" %}selected{% endif %}>{{ level.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="max_price" class="form-label">Max £/hour</label>
+                    <input type="number" min="0" step="0.01" name="max_price" id="max_price" class="form-control" value="{{ max_price }}">
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if page_obj %}
+        <p class="text-muted">{{ page_obj.paginator.count }} tutor{{ page_obj.paginator.count|pluralize }} found</p>
+        <div class="row g-4">
+            {% for tutor in page_obj %}
+                <div class="col-md-4">
+                    <a href="{% url 'tutor_detail' tutor.pk %}" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm profile-card">
+                            <div class="card-body text-center">
+                                {% if tutor.profile_picture %}
+                                    <img src="{{ tutor.profile_picture.url }}" alt="{{ tutor.first_name }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3 border" style="width: 100px; height: 100px;">
+                                        <span class="text-muted">No Image</span>
+                                    </div>
+                                {% endif %}
+                                <h5 class="card-title mb-1">{{ tutor.first_name|capfirst }} {{ tutor.last_name|capfirst }}</h5>
+                                <p class="text-muted mb-2">£{{ tutor.cost }}/hour</p>
+                                <p class="mb-2">
+                                    {% for subject in tutor.subjects.all %}
+                                        <span class="badge bg-secondary">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </p>
+                                <p class="mb-0">
+                                    {% for level in tutor.subject_levels.all %}
+                                        <span class="badge bg-info text-dark">{{ level.name }}</span>
+                                    {% endfor %}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-4" aria-label="Tutor search pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&subject={{ selected_subject }}&level={{ selected_level }}&max_price={{ max_price }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&subject={{ selected_subject }}&level={{ selected_level }}&max_price={{ max_price }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <p class="text-muted">No tutors match your search yet. Try broadening your filters.</p>
+    {% endif %}
+</div>
+{% endblock %}

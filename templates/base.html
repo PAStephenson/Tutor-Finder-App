@@ -147,6 +147,12 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_search' %}">Find a Tutor</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'news_list' %}">News</a>
+                    </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <span class="navbar-text text-light me-3">
@@ -154,8 +160,13 @@
                             </span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">My Profile</a>
+                            <a class="nav-link" href="{% url 'message_inbox' %}">Messages</a>
                         </li>
+                        {% if user.is_tutor %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'profile' %}">My Profile</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'custom_logout' %}">Log Out</a>
                         </li>
@@ -164,7 +175,11 @@
                             <a class="nav-link" href="{% url 'login' %}">Log In</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-warning btn-sm" href="{% url 'signup' %}" role="button">Sign Up</a>
+                            {% if parent_signup_enabled %}
+                                <a class="btn btn-warning btn-sm" href="{% url 'parent_signup' %}" role="button">Sign Up</a>
+                            {% else %}
+                                <a class="btn btn-warning btn-sm" href="{% url 'signup' %}" role="button">Sign Up</a>
+                            {% endif %}
                         </li>
                     {% endif %}
                 </ul>
@@ -173,6 +188,16 @@
     </nav>
 
     <div class="main-content">
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </div>
 

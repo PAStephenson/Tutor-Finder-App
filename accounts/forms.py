@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.forms.widgets import DateInput
-from .models import CustomUser, Subject, SubjectLevel
+from .models import CustomUser, Subject, SubjectLevel, Conversation, Message
 
 class CustomUserCreationForm(UserCreationForm):
     password1 = forms.CharField(
@@ -35,6 +35,48 @@ class CustomUserCreationForm(UserCreationForm):
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = CustomUser.ROLE_TUTOR
+        if commit:
+            user.save()
+        return user
+
+class ParentSignUpForm(UserCreationForm):
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        strip=False,
+        help_text="Your password must contain at least 8 characters.",
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        strip=False,
+    )
+
+    terms_agreed = forms.BooleanField(
+        required=True,
+        error_messages={'required': 'You must agree to the terms to sign up.'},
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'parentAgreementCheckbox'})
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('first_name', 'last_name', 'email')
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = CustomUser.ROLE_PARENT
+        if commit:
+            user.save()
+        return user
 
 class CustomUserChangeForm(UserChangeForm):
     password = None 
@@ -106,9 +148,25 @@ class CustomUserChangeForm(UserChangeForm):
             if self.instance.documents_approved:
                 if 'qts_certificate' in self.fields: del self.fields['qts_certificate']
                 if 'dbs_certificate' in self.fields: del self.fields['dbs_certificate']
-            
+
             if self.instance.references_approved:
                 fields_to_remove = ['referee1_name', 'referee1_email', 'referee2_name', 'referee2_email']
                 for field in fields_to_remove:
                     if field in self.fields:
                         del self.fields[field]
+
+class MessageForm(forms.Form):
+    body = forms.CharField(
+        max_length=2000,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'maxlength': 2000, 'placeholder': 'Type your message...'})
+    )
+
+class AdminUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('email',)
+
+class AdminUserChangeForm(UserChangeForm):
+    class Meta(UserChangeForm.Meta):
+        model = CustomUser
+        fields = '__all__'

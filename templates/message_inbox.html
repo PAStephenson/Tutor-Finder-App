@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1 class="mb-4" style="color: var(--primary-color);">Messages</h1>
+
+    {% if conversations %}
+        <div class="list-group">
+            {% for conversation in conversations %}
+                {% if conversation.tutor == user %}
+                    {% with other=conversation.parent %}
+                    <a href="{% url 'conversation_detail' conversation.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ other.first_name|capfirst }} {{ other.last_name|capfirst }}</h6>
+                            <small class="text-muted">{{ conversation.created_at|date:"d M Y, H:i" }}</small>
+                        </div>
+                        <p class="mb-1 text-muted">{{ other.email }}</p>
+                    </a>
+                    {% endwith %}
+                {% else %}
+                    {% with other=conversation.tutor %}
+                    <a href="{% url 'conversation_detail' conversation.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ other.first_name|capfirst }} {{ other.last_name|capfirst }}</h6>
+                            <small class="text-muted">{{ conversation.created_at|date:"d M Y, H:i" }}</small>
+                        </div>
+                        <p class="mb-1 text-muted">{{ other.email }}</p>
+                    </a>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            {% if user.is_tutor %}
+                You don't have any messages yet. Once a parent contacts you from your profile, the conversation will show up here.
+            {% else %}
+                You don't have any messages yet. Find a tutor and send them a message to start a conversation.
+            {% endif %}
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

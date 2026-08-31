@@ -58,15 +58,43 @@
                         At TeacherTutor.org, we are all about making quality tutoring easy to find and affordable for every family.
                     </p>
                     <p class="mb-3">
-                        We are busy building our amazing team of qualified teachers and can’t wait to launch soon!
+                        Search our team of qualified, QTS-holding teachers by subject, level and budget, then message them directly to arrange a programme of study.
                     </p>
-                    <p class="fw-bold" style="color: var(--secondary-color);">
-                        Follow us on social media to stay in the loop — exciting things are just around the corner.
-                    </p>
+                    <div class="mt-4">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'tutor_search' %}" class="btn btn-warning btn-lg">Find a Tutor</a>
+                        {% elif parent_signup_enabled %}
+                            <a href="{% url 'parent_signup' %}" class="btn btn-warning btn-lg">Sign Up to Find a Tutor</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
         </div>
     </div>
 </div>
+
+{% if latest_news %}
+<div class="py-5" style="background-color: var(--light-gray);">
+    <div class="container">
+        <h2 class="mb-4 text-center" style="color: var(--primary-color);">Latest News</h2>
+        <div class="row g-4">
+            {% for post in latest_news %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <p class="small text-muted mb-1">{{ post.published_at|date:"d M Y" }}</p>
+                            <h3 class="h5 card-title">{{ post.title }}</h3>
+                            <p class="card-text text-muted">{{ post.body|truncatewords:25 }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'news_list' %}" class="btn btn-outline-primary">View All News</a>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

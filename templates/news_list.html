@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}News - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1 class="mb-4" style="color: var(--primary-color);">News</h1>
+
+    {% if news_posts %}
+        {% for post in news_posts %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <p class="small text-muted mb-1">{{ post.published_at|date:"d M Y" }}</p>
+                    <h2 class="h4 card-title mb-3">{{ post.title }}</h2>
+                    <div>{{ post.body|linebreaks }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No news yet - check back soon.</p>
+    {% endif %}
+</div>
+{% endblock %}

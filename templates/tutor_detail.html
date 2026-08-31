@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ tutor.first_name }} {{ tutor.last_name }} - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <a href="{% url 'tutor_search' %}" class="d-inline-block mb-3">&larr; Back to search</a>
+
+    <div class="card shadow-sm profile-card">
+        <div class="card-body">
+            <div class="row align-items-center mb-4">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    {% if tutor.profile_picture %}
+                        <img src="{{ tutor.profile_picture.url }}" alt="{{ tutor.first_name }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto border" style="width: 150px; height: 150px;">
+                            <span class="text-muted">No Image</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h2 class="card-title mb-1">{{ tutor.first_name|capfirst }} {{ tutor.last_name|capfirst }}</h2>
+                    <p class="text-muted mb-2">£{{ tutor.cost }}/hour</p>
+                    <div>
+                        {% for subject in tutor.subjects.all %}
+                            <span class="badge bg-secondary">{{ subject.name }}</span>
+                        {% endfor %}
+                        {% for level in tutor.subject_levels.all %}
+                            <span class="badge bg-info text-dark">{{ level.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="section-title">About</h5>
+            {% if tutor.bio %}
+                <p>{{ tutor.bio|linebreaks }}</p>
+            {% else %}
+                <p class="text-muted">This tutor hasn't added a bio yet.</p>
+            {% endif %}
+
+            <div class="mt-4 p-4 rounded-3" style="background-color: var(--light-gray);">
+                <h5 class="section-title">Send a Message</h5>
+                <p class="text-muted">Interested in tutoring with {{ tutor.first_name|capfirst }}? Send a message below to start a conversation — you'll be able to message back and forth from your Messages inbox.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.body.id_for_label }}" class="form-label">Message</label>
+                        {{ form.body }}
+                        {{ form.body.errors }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

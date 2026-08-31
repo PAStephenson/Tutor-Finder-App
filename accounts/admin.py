@@ -1,17 +1,21 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
-from .models import CustomUser, Subject, SubjectLevel
+from .forms import AdminUserCreationForm, AdminUserChangeForm
+from .models import CustomUser, Subject, SubjectLevel, Conversation, Message, NewsPost
 
 class CustomUserAdmin(BaseUserAdmin):
     model = CustomUser
-    
+    form = AdminUserChangeForm
+    add_form = AdminUserCreationForm
+
     list_display = (
-        'email', 'first_name', 'last_name', 'is_staff', 
-        'documents_approved', 'references_approved', 'id_check_completed'
+        'email', 'first_name', 'last_name', 'role', 'is_staff',
+        'documents_approved', 'references_approved', 'id_check_completed', 'welcome_email_sent'
     )
-    
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'documents_approved', 'references_approved', 'id_check_completed') 
+    list_editable = ('welcome_email_sent',)
+
+    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'documents_approved', 'references_approved', 'id_check_completed', 'welcome_email_sent')
     
     def view_profile_picture(self, obj):
         if obj.profile_picture:
@@ -39,7 +43,7 @@ class CustomUserAdmin(BaseUserAdmin):
     view_dbs_certificate.short_description = "DBS Preview"
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('email', 'password', 'role')}),
         ('Personal Info', {
             'fields': (
                 'profile_picture', 'view_profile_picture',
@@ -55,6 +59,7 @@ class CustomUserAdmin(BaseUserAdmin):
         )}),
         ('References', {'fields': ('referee1_name', 'referee1_email', 'referee2_name', 'referee2_email', 'references_approved')}),
         ('ID Check', {'fields': ('id_check_completed',)}),
+        ('Onboarding Emails (Admin Only)', {'fields': ('welcome_email_sent',)}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -62,7 +67,7 @@ class CustomUserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password', 'password2'),
+            'fields': ('email', 'password1', 'password2', 'role'),
         }),
     )
     
@@ -71,6 +76,30 @@ class CustomUserAdmin(BaseUserAdmin):
     readonly_fields = ('view_profile_picture', 'view_qts_certificate', 'view_dbs_certificate')
     filter_horizontal = ('subjects', 'subject_levels', 'groups', 'user_permissions',)
 
+class MessageInline(admin.TabularInline):
+    model = Message
+    extra = 0
+    readonly_fields = ('sender', 'body', 'created_at')
+    can_delete = False
+
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('parent', 'tutor', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = (
+        'parent__email', 'parent__first_name', 'parent__last_name',
+        'tutor__email', 'tutor__first_name', 'tutor__last_name',
+    )
+    readonly_fields = ('tutor', 'parent', 'created_at')
+    inlines = [MessageInline]
+
+class NewsPostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'published_at')
+    date_hierarchy = 'published_at'
+    search_fields = ('title', 'body')
+    ordering = ('-published_at',)
+
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Subject)
 admin.site.register(SubjectLevel)
+admin.site.register(Conversation, ConversationAdmin)
+admin.site.register(NewsPost, NewsPostAdmin)
