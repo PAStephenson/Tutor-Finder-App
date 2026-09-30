@@ -1,20 +1,28 @@
 from decimal import Decimal, InvalidOperation
 
+import stripe
+
 from django.conf import settings
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.views.generic import CreateView
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.urls import reverse, reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, F
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm, ParentSignUpForm, MessageForm
-from .models import Subject, SubjectLevel, Conversation, Message, NewsPost
+from .models import Subject, SubjectLevel, Conversation, Message, NewsPost, TokenPurchase, ContactUnlock
 
 CustomUser = get_user_model()
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 APPROVED_TUTOR_FILTERS = dict(
     is_active=True,
@@ -165,7 +173,9 @@ def tutor_detail(request, pk):
     else:
         form = MessageForm()
 
-    return render(request, 'tutor_detail.html', {'tutor': tutor, 'form': form})
+    is_unlocked = request.user.is_parent and ContactUnlock.objects.filter(parent=request.user, tutor=tutor).exists()
+
+    return render(request, 'tutor_detail.html', {'tutor': tutor, 'form': form, 'is_unlocked': is_unlocked})
 
 @login_required
 def message_inbox(request):
@@ -201,3 +211,111 @@ def conversation_detail(request, pk):
 def custom_logout_view(request):
     logout(request)
     return redirect('home')
+
+@login_required
+def buy_tokens(request):
+    if not request.user.is_parent:
+        return redirect('home')
+
+    if request.method == 'POST':
+        try:
+            quantity = int(request.POST.get('quantity', '1'))
+        except ValueError:
+            quantity = 0
+
+        if quantity < 1:
+            messages.error(request, 'Please choose a valid number of tokens.')
+            return redirect('buy_tokens')
+
+        if not settings.STRIPE_SECRET_KEY:
+            messages.error(request, 'Token purchases are not available yet - please check back soon.')
+            return redirect('buy_tokens')
+
+        checkout_session = stripe.checkout.Session.create(
+            mode='payment',
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'gbp',
+                    'unit_amount': settings.TOKEN_PRICE_PENCE,
+                    'product_data': {'name': 'TeacherTutor Contact Token'},
+                },
+                'quantity': quantity,
+            }],
+            success_url=request.build_absolute_uri(reverse('token_purchase_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.build_absolute_uri(reverse('token_purchase_cancel')),
+            customer_email=request.user.email,
+        )
+
+        TokenPurchase.objects.create(
+            parent=request.user,
+            tokens=quantity,
+            amount_pence=settings.TOKEN_PRICE_PENCE * quantity,
+            stripe_checkout_session_id=checkout_session.id,
+        )
+
+        return redirect(checkout_session.url)
+
+    return render(request, 'buy_tokens.html', {
+        'token_price_pounds': settings.TOKEN_PRICE_PENCE / 100,
+        'stripe_configured': bool(settings.STRIPE_SECRET_KEY),
+    })
+
+@login_required
+def token_purchase_success(request):
+    return render(request, 'token_purchase_success.html')
+
+@login_required
+def token_purchase_cancel(request):
+    return render(request, 'token_purchase_cancel.html')
+
+@csrf_exempt
+@require_POST
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
+    except (ValueError, stripe.SignatureVerificationError):
+        return HttpResponse(status=400)
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        try:
+            purchase = TokenPurchase.objects.get(stripe_checkout_session_id=session['id'])
+        except TokenPurchase.DoesNotExist:
+            return HttpResponse(status=200)
+
+        if purchase.status != TokenPurchase.STATUS_COMPLETED:
+            purchase.status = TokenPurchase.STATUS_COMPLETED
+            purchase.completed_at = timezone.now()
+            purchase.save(update_fields=['status', 'completed_at'])
+
+            CustomUser.objects.filter(pk=purchase.parent_id).update(
+                token_balance=F('token_balance') + purchase.tokens
+            )
+
+    return HttpResponse(status=200)
+
+@login_required
+@require_POST
+def unlock_tutor_contact(request, pk):
+    tutor = get_object_or_404(CustomUser, pk=pk, **APPROVED_TUTOR_FILTERS)
+
+    if not request.user.is_parent:
+        return redirect('tutor_detail', pk=pk)
+
+    if ContactUnlock.objects.filter(parent=request.user, tutor=tutor).exists():
+        return redirect('tutor_detail', pk=pk)
+
+    updated = CustomUser.objects.filter(pk=request.user.pk, token_balance__gte=1).update(
+        token_balance=F('token_balance') - 1
+    )
+    if not updated:
+        messages.error(request, "You don't have enough tokens to unlock this tutor's contact details.")
+        return redirect('buy_tokens')
+
+    ContactUnlock.objects.get_or_create(parent=request.user, tutor=tutor)
+    messages.success(request, f"You've unlocked {tutor.first_name}'s contact details.")
+    return redirect('tutor_detail', pk=pk)

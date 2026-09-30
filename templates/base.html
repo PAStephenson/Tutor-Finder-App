@@ -167,6 +167,11 @@
                                 <a class="nav-link" href="{% url 'profile' %}">My Profile</a>
                             </li>
                         {% endif %}
+                        {% if user.is_parent %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'buy_tokens' %}">Tokens: {{ user.token_balance }}</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'custom_logout' %}">Log Out</a>
                         </li>

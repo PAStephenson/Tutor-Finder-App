@@ -58,7 +58,7 @@
                                         <span class="text-muted">No Image</span>
                                     </div>
                                 {% endif %}
-                                <h5 class="card-title mb-1">{{ tutor.first_name|capfirst }} {{ tutor.last_name|capfirst }}</h5>
+                                <h5 class="card-title mb-1">{{ tutor.first_name|capfirst }}</h5>
                                 <p class="text-muted mb-2">£{{ tutor.cost }}/hour</p>
                                 <p class="mb-2">
                                     {% for subject in tutor.subjects.all %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Buy Tokens - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm auth-card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Buy Tokens</h2>
+
+                    <div class="p-3 mb-4 rounded-3" style="background-color: var(--light-gray);">
+                        <h6 class="section-title">How tokens work</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Each token costs £{{ token_price_pounds }}.</li>
+                            <li>Browsing tutors and messaging them is free — you only spend a token when you want a tutor's email and phone number.</li>
+                            <li>We recommend messaging a tutor first to check availability and agree terms before spending a token.</li>
+                            <li>Spending 1 token unlocks that tutor's contact details <strong>permanently</strong> — you won't need to spend another token to view them again.</li>
+                            <li>Tokens are specific to each tutor — unlocking one tutor doesn't unlock any others.</li>
+                            <li>Token purchases and unlocks are non-refundable.</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-center mb-4">
+                        <strong>Your current balance:</strong> {{ user.token_balance }} token{{ user.token_balance|pluralize }}
+                    </p>
+
+                    {% if stripe_configured %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Number of tokens</label>
+                                <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Continue to Payment</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            Token purchases aren't set up yet - please check back soon.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,7 +1,10 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import CustomUser, Subject, SubjectLevel, Conversation, Message, NewsPost
+from .models import CustomUser, Subject, SubjectLevel, Conversation, Message, NewsPost, TokenPurchase, ContactUnlock
 
 
 class TutorSearchTests(TestCase):
@@ -339,6 +342,8 @@ class AdminUserManagementTests(TestCase):
             'first_name': 'Edited',
             'last_name': 'Name',
             'bio': '',
+            'phone_number': '',
+            'token_balance': '0',
             'is_active': 'on',
             'date_joined_0': tutor.date_joined.strftime('%Y-%m-%d'),
             'date_joined_1': tutor.date_joined.strftime('%H:%M:%S'),
@@ -380,3 +385,210 @@ class NewsTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(list(response.context['latest_news']), [])
+
+
+class BuyTokensTests(TestCase):
+    def setUp(self):
+        self.parent = CustomUser.objects.create_user(
+            email='parent@example.com', password='testpass123', role=CustomUser.ROLE_PARENT,
+        )
+        self.tutor = CustomUser.objects.create_user(
+            email='tutor@example.com', password='testpass123', role=CustomUser.ROLE_TUTOR,
+        )
+
+    def test_buy_tokens_requires_login(self):
+        response = self.client.get(reverse('buy_tokens'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_tutor_cannot_access_buy_tokens(self):
+        self.client.force_login(self.tutor)
+        response = self.client.get(reverse('buy_tokens'))
+        self.assertRedirects(response, reverse('home'))
+
+    def test_buy_tokens_page_shows_balance_and_price(self):
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('buy_tokens'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['token_price_pounds'], 5.0)
+
+    def test_purchase_blocked_without_stripe_keys_configured(self):
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('buy_tokens'), {'quantity': '2'})
+        self.assertRedirects(response, reverse('buy_tokens'))
+        self.assertEqual(TokenPurchase.objects.count(), 0)
+
+    @override_settings(STRIPE_SECRET_KEY='sk_test_fake')
+    @patch('accounts.views.stripe.checkout.Session.create')
+    def test_purchase_creates_pending_record_and_redirects_to_stripe(self, mock_create):
+        mock_create.return_value = SimpleNamespace(id='cs_test_123', url='https://checkout.stripe.com/pay/cs_test_123')
+
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('buy_tokens'), {'quantity': '3'})
+
+        self.assertRedirects(response, 'https://checkout.stripe.com/pay/cs_test_123', fetch_redirect_response=False)
+        purchase = TokenPurchase.objects.get(stripe_checkout_session_id='cs_test_123')
+        self.assertEqual(purchase.parent, self.parent)
+        self.assertEqual(purchase.tokens, 3)
+        self.assertEqual(purchase.amount_pence, 1500)
+        self.assertEqual(purchase.status, TokenPurchase.STATUS_PENDING)
+
+    @override_settings(STRIPE_SECRET_KEY='sk_test_fake')
+    def test_invalid_quantity_rejected(self):
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('buy_tokens'), {'quantity': '0'})
+        self.assertRedirects(response, reverse('buy_tokens'))
+        self.assertEqual(TokenPurchase.objects.count(), 0)
+
+
+class StripeWebhookTests(TestCase):
+    def setUp(self):
+        self.parent = CustomUser.objects.create_user(
+            email='parent@example.com', password='testpass123', role=CustomUser.ROLE_PARENT,
+        )
+        self.purchase = TokenPurchase.objects.create(
+            parent=self.parent, tokens=5, amount_pence=2500,
+            stripe_checkout_session_id='cs_test_abc',
+        )
+
+    def _completed_event(self, session_id='cs_test_abc'):
+        return {'type': 'checkout.session.completed', 'data': {'object': {'id': session_id}}}
+
+    @patch('accounts.views.stripe.Webhook.construct_event')
+    def test_webhook_credits_tokens_on_completion(self, mock_construct):
+        mock_construct.return_value = self._completed_event()
+        response = self.client.post(
+            reverse('stripe_webhook'), data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=fake',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.purchase.refresh_from_db()
+        self.parent.refresh_from_db()
+        self.assertEqual(self.purchase.status, TokenPurchase.STATUS_COMPLETED)
+        self.assertIsNotNone(self.purchase.completed_at)
+        self.assertEqual(self.parent.token_balance, 5)
+
+    @patch('accounts.views.stripe.Webhook.construct_event')
+    def test_webhook_is_idempotent_on_redelivery(self, mock_construct):
+        mock_construct.return_value = self._completed_event()
+        for _ in range(2):
+            self.client.post(
+                reverse('stripe_webhook'), data=b'{}', content_type='application/json',
+                HTTP_STRIPE_SIGNATURE='t=1,v1=fake',
+            )
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.token_balance, 5)
+
+    @patch('accounts.views.stripe.Webhook.construct_event')
+    def test_webhook_ignores_unknown_session(self, mock_construct):
+        mock_construct.return_value = self._completed_event(session_id='cs_unknown')
+        response = self.client.post(
+            reverse('stripe_webhook'), data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=fake',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.token_balance, 0)
+
+    @patch('accounts.views.stripe.Webhook.construct_event')
+    def test_webhook_rejects_bad_signature(self, mock_construct):
+        import stripe
+        mock_construct.side_effect = stripe.SignatureVerificationError('bad sig', 'sig_header')
+        response = self.client.post(
+            reverse('stripe_webhook'), data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='bad',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_webhook_rejects_get(self):
+        response = self.client.get(reverse('stripe_webhook'))
+        self.assertEqual(response.status_code, 405)
+
+
+class UnlockTutorContactTests(TestCase):
+    def setUp(self):
+        self.maths = Subject.objects.create(name='Maths')
+        self.gcse = SubjectLevel.objects.create(name='GCSE')
+        self.tutor = CustomUser.objects.create_user(
+            email='tutor@example.com', password='testpass123', role=CustomUser.ROLE_TUTOR,
+            first_name='Tina', cost=30, documents_approved=True, references_approved=True,
+            id_check_completed=True, phone_number='07700900000',
+        )
+        self.tutor.subjects.add(self.maths)
+        self.tutor.subject_levels.add(self.gcse)
+
+        self.parent = CustomUser.objects.create_user(
+            email='parent@example.com', password='testpass123', role=CustomUser.ROLE_PARENT,
+            token_balance=2,
+        )
+
+    def test_unlock_requires_login(self):
+        response = self.client.post(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_unlock_requires_post(self):
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertEqual(response.status_code, 405)
+
+    def test_successful_unlock_spends_one_token(self):
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertRedirects(response, reverse('tutor_detail', args=[self.tutor.pk]))
+
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.token_balance, 1)
+        self.assertTrue(ContactUnlock.objects.filter(parent=self.parent, tutor=self.tutor).exists())
+
+    def test_unlock_with_no_tokens_is_blocked(self):
+        self.parent.token_balance = 0
+        self.parent.save()
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertRedirects(response, reverse('buy_tokens'))
+
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.token_balance, 0)
+        self.assertFalse(ContactUnlock.objects.filter(parent=self.parent, tutor=self.tutor).exists())
+
+    def test_already_unlocked_does_not_charge_again(self):
+        ContactUnlock.objects.create(parent=self.parent, tutor=self.tutor)
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertRedirects(response, reverse('tutor_detail', args=[self.tutor.pk]))
+
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.token_balance, 2)
+        self.assertEqual(ContactUnlock.objects.filter(parent=self.parent, tutor=self.tutor).count(), 1)
+
+    def test_tutor_cannot_spend_tokens(self):
+        other_tutor = CustomUser.objects.create_user(
+            email='other@example.com', password='testpass123', role=CustomUser.ROLE_TUTOR,
+        )
+        self.client.force_login(other_tutor)
+        response = self.client.post(reverse('unlock_tutor_contact', args=[self.tutor.pk]))
+        self.assertRedirects(response, reverse('tutor_detail', args=[self.tutor.pk]))
+        self.assertFalse(ContactUnlock.objects.filter(tutor=self.tutor).exists())
+
+    def test_unapproved_tutor_404s(self):
+        pending_tutor = CustomUser.objects.create_user(
+            email='pending@example.com', password='testpass123', role=CustomUser.ROLE_TUTOR,
+            documents_approved=False, references_approved=True, id_check_completed=True,
+        )
+        self.client.force_login(self.parent)
+        response = self.client.post(reverse('unlock_tutor_contact', args=[pending_tutor.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_tutor_detail_hides_contact_until_unlocked(self):
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('tutor_detail', args=[self.tutor.pk]))
+        self.assertFalse(response.context['is_unlocked'])
+        self.assertNotContains(response, '07700900000')
+
+    def test_tutor_detail_shows_contact_once_unlocked(self):
+        ContactUnlock.objects.create(parent=self.parent, tutor=self.tutor)
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('tutor_detail', args=[self.tutor.pk]))
+        self.assertTrue(response.context['is_unlocked'])
+        self.assertContains(response, '07700900000')
+        self.assertContains(response, 'tutor@example.com')

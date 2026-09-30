@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Cancelled - TeacherTutor{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-sm auth-card">
+                <div class="card-body">
+                    <h2 class="card-title mb-3">Payment Cancelled</h2>
+                    <p class="text-muted mb-4">Your card hasn't been charged. You can try again whenever you're ready.</p>
+                    <a href="{% url 'buy_tokens' %}" class="btn btn-primary">Back to Buy Tokens</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

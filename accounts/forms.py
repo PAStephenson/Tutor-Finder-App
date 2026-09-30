@@ -100,16 +100,17 @@ class CustomUserChangeForm(UserChangeForm):
         model = CustomUser
         fields = (
             'profile_picture',
-            'first_name', 'last_name', 'email', 'date_of_birth', 
+            'first_name', 'last_name', 'email', 'date_of_birth',
             'bio',
+            'phone_number',
             'cost', 'subjects', 'subject_levels',
             'qts_certificate', 'dbs_certificate',
             'referee1_name', 'referee1_email', 'referee2_name', 'referee2_email',
         )
         exclude = (
-            'password', 'is_staff', 'is_superuser', 'is_active', 
-            'groups', 'user_permissions', 'last_login', 'date_joined', 
-            'documents_approved', 'references_approved', 
+            'password', 'is_staff', 'is_superuser', 'is_active',
+            'groups', 'user_permissions', 'last_login', 'date_joined',
+            'documents_approved', 'references_approved',
             'id_check_completed'
         )
         widgets = {
@@ -118,6 +119,7 @@ class CustomUserChangeForm(UserChangeForm):
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'maxlength': 1500}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
             'qts_certificate': forms.FileInput(attrs={'class': 'form-control'}),
             'dbs_certificate': forms.FileInput(attrs={'class': 'form-control'}),

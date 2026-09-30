@@ -88,6 +88,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         help_text="Admin use only - tick once the welcome email has been sent to this tutor."
     )
 
+    phone_number = models.CharField(max_length=30, blank=True)
+
+    token_balance = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of tokens this parent has available to spend on unlocking tutor contact details."
+    )
+
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
@@ -162,3 +169,41 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.get_sender_display()} message in conversation #{self.conversation_id}"
+
+class TokenPurchase(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+
+    parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='token_purchases')
+    tokens = models.PositiveIntegerField()
+    amount_pence = models.PositiveIntegerField(help_text="Total amount charged, in pence.")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    stripe_checkout_session_id = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.tokens} token(s) for {self.parent.email} ({self.status})"
+
+class ContactUnlock(models.Model):
+    parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='contact_unlocks')
+    tutor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='unlocked_by')
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-unlocked_at']
+        constraints = [
+            models.UniqueConstraint(fields=['parent', 'tutor'], name='unique_contact_unlock_per_tutor_parent'),
+        ]
+
+    def __str__(self):
+        return f"{self.parent.email} unlocked {self.tutor.email}"

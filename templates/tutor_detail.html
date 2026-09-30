@@ -40,6 +40,52 @@
                 <p class="text-muted">This tutor hasn't added a bio yet.</p>
             {% endif %}
 
+            {% if user.is_parent %}
+            <div class="mt-4 p-4 rounded-3" style="background-color: var(--light-gray);">
+                <h5 class="section-title">Contact Details</h5>
+                {% if is_unlocked %}
+                    <p class="mb-1"><strong>Email:</strong> {{ tutor.email }}</p>
+                    <p class="mb-0"><strong>Phone:</strong> {{ tutor.phone_number|default:"Not provided by tutor" }}</p>
+                {% else %}
+                    <p class="text-muted">Unlock {{ tutor.first_name|capfirst }}'s email and phone number for 1 token.</p>
+                    {% if user.token_balance > 0 %}
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#unlockConfirmModal">
+                            Unlock Contact Details (1 token)
+                        </button>
+                        <p class="small text-muted mt-2 mb-0">
+                            You have {{ user.token_balance }} token{{ user.token_balance|pluralize }}.
+                            <a href="{% url 'buy_tokens' %}">How do tokens work?</a>
+                        </p>
+
+                        <div class="modal fade" id="unlockConfirmModal" tabindex="-1" aria-labelledby="unlockConfirmModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="unlockConfirmModalLabel">Before you spend a token</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>We recommend messaging {{ tutor.first_name|capfirst }} first to check availability and agree terms (lesson times, rate, location) before unlocking their contact details.</p>
+                                        <p class="mb-0">Unlocking costs 1 token and is <strong>non-refundable</strong> once confirmed.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel, I'll Message First</button>
+                                        <form method="post" action="{% url 'unlock_tutor_contact' tutor.pk %}" class="d-inline mb-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">Yes, Unlock (1 token)</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="small text-muted mb-2">You don't have any tokens yet.</p>
+                        <a href="{% url 'buy_tokens' %}" class="btn btn-warning">Buy Tokens</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+
             <div class="mt-4 p-4 rounded-3" style="background-color: var(--light-gray);">
                 <h5 class="section-title">Send a Message</h5>
                 <p class="text-muted">Interested in tutoring with {{ tutor.first_name|capfirst }}? Send a message below to start a conversation — you'll be able to message back and forth from your Messages inbox.</p>

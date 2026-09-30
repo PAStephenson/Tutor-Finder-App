@@ -11,6 +11,11 @@ from .views import (
     conversation_detail,
     message_inbox,
     news_list,
+    buy_tokens,
+    token_purchase_success,
+    token_purchase_cancel,
+    stripe_webhook,
+    unlock_tutor_contact,
     custom_logout_view,
 )
 
@@ -23,8 +28,13 @@ urlpatterns = [
     path('profile/edit/', edit_profile, name='edit_profile'),
     path('tutors/', tutor_search, name='tutor_search'),
     path('tutors/<int:pk>/', tutor_detail, name='tutor_detail'),
+    path('tutors/<int:pk>/unlock/', unlock_tutor_contact, name='unlock_tutor_contact'),
     path('messages/', message_inbox, name='message_inbox'),
     path('messages/<int:pk>/', conversation_detail, name='conversation_detail'),
     path('news/', news_list, name='news_list'),
+    path('tokens/buy/', buy_tokens, name='buy_tokens'),
+    path('tokens/success/', token_purchase_success, name='token_purchase_success'),
+    path('tokens/cancel/', token_purchase_cancel, name='token_purchase_cancel'),
+    path('tokens/webhook/', stripe_webhook, name='stripe_webhook'),
     path('logout/', custom_logout_view, name='custom_logout'), # Use unique name
 ]
