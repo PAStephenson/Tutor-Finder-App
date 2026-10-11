@@ -40,7 +40,7 @@ ALLOWED_HOSTS = [
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-TOKEN_PRICE_PENCE = int(os.environ.get('TOKEN_PRICE_PENCE', '3000'))  # £5.00 per token
+TOKEN_PRICE_PENCE = int(os.environ.get('TOKEN_PRICE_PENCE', '100'))  # £5.00 per token
 
 INSTALLED_APPS = [
     'django.contrib.admin',
