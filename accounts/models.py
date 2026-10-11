@@ -71,6 +71,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     subjects = models.ManyToManyField(Subject, blank=True, related_name="tutors")
     subject_levels = models.ManyToManyField(SubjectLevel, blank=True, related_name="tutors")
 
+    AVAILABILITY_AVAILABLE = 'available'
+    AVAILABILITY_NOT_AVAILABLE = 'not_available'
+    AVAILABILITY_CHOICES = [
+        (AVAILABILITY_AVAILABLE, 'Available'),
+        (AVAILABILITY_NOT_AVAILABLE, 'Not Available'),
+    ]
+    availability = models.CharField(
+        max_length=20, choices=AVAILABILITY_CHOICES, default=AVAILABILITY_AVAILABLE,
+        help_text="Tutors set to 'Not Available' won't show up when parents search for tutors."
+    )
+
     qts_certificate = models.FileField(upload_to=get_file_path, null=True, blank=True)
     dbs_certificate = models.FileField(upload_to=get_file_path, null=True, blank=True)
     documents_approved = models.BooleanField(default=False)
@@ -115,6 +126,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @property
     def is_parent(self):
         return self.role == self.ROLE_PARENT
+
+    @property
+    def is_available(self):
+        return self.availability == self.AVAILABILITY_AVAILABLE
 
     @property
     def is_profile_complete(self):

@@ -71,6 +71,28 @@ class TutorSearchTests(TestCase):
         response = self.client.get(reverse('tutor_search'), {'max_price': 'not-a-number'})
         self.assertEqual(response.status_code, 200)
 
+    def test_search_excludes_unavailable_tutors(self):
+        self.approved_tutor.availability = CustomUser.AVAILABILITY_NOT_AVAILABLE
+        self.approved_tutor.save()
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('tutor_search'))
+        tutors = list(response.context['page_obj'])
+        self.assertNotIn(self.approved_tutor, tutors)
+
+    def test_search_includes_available_tutors_by_default(self):
+        self.assertEqual(self.approved_tutor.availability, CustomUser.AVAILABILITY_AVAILABLE)
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('tutor_search'))
+        tutors = list(response.context['page_obj'])
+        self.assertIn(self.approved_tutor, tutors)
+
+    def test_tutor_detail_still_accessible_when_unavailable(self):
+        self.approved_tutor.availability = CustomUser.AVAILABILITY_NOT_AVAILABLE
+        self.approved_tutor.save()
+        self.client.force_login(self.parent)
+        response = self.client.get(reverse('tutor_detail', args=[self.approved_tutor.pk]))
+        self.assertEqual(response.status_code, 200)
+
     def test_tutor_detail_requires_login(self):
         response = self.client.get(reverse('tutor_detail', args=[self.approved_tutor.pk]))
         self.assertEqual(response.status_code, 302)
@@ -344,6 +366,7 @@ class AdminUserManagementTests(TestCase):
             'bio': '',
             'phone_number': '',
             'token_balance': '0',
+            'availability': CustomUser.AVAILABILITY_AVAILABLE,
             'is_active': 'on',
             'date_joined_0': tutor.date_joined.strftime('%Y-%m-%d'),
             'date_joined_1': tutor.date_joined.strftime('%H:%M:%S'),

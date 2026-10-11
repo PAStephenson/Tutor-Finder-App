@@ -116,7 +116,7 @@ def edit_profile(request):
 @login_required
 def tutor_search(request):
     tutors = CustomUser.objects.filter(
-        **APPROVED_TUTOR_FILTERS, cost__isnull=False
+        **APPROVED_TUTOR_FILTERS, cost__isnull=False, availability=CustomUser.AVAILABILITY_AVAILABLE
     ).exclude(subjects__isnull=True).exclude(subject_levels__isnull=True).distinct()
 
     subject_id = request.GET.get('subject', '')

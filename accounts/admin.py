@@ -15,7 +15,7 @@ class CustomUserAdmin(BaseUserAdmin):
     )
     list_editable = ('welcome_email_sent',)
 
-    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'documents_approved', 'references_approved', 'id_check_completed', 'welcome_email_sent')
+    list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'documents_approved', 'references_approved', 'id_check_completed', 'welcome_email_sent', 'availability')
     
     def view_profile_picture(self, obj):
         if obj.profile_picture:
@@ -51,7 +51,7 @@ class CustomUserAdmin(BaseUserAdmin):
                 'bio', 'phone_number'
             )
         }),
-        ('Tutoring Details', {'fields': ('cost', 'subjects', 'subject_levels')}),
+        ('Tutoring Details', {'fields': ('cost', 'availability', 'subjects', 'subject_levels')}),
         ('Documents', {'fields': (
             'qts_certificate', 'view_qts_certificate',
             'dbs_certificate', 'view_dbs_certificate',

@@ -103,7 +103,7 @@ class CustomUserChangeForm(UserChangeForm):
             'first_name', 'last_name', 'email', 'date_of_birth',
             'bio',
             'phone_number',
-            'cost', 'subjects', 'subject_levels',
+            'cost', 'availability', 'subjects', 'subject_levels',
             'qts_certificate', 'dbs_certificate',
             'referee1_name', 'referee1_email', 'referee2_name', 'referee2_email',
         )
@@ -121,6 +121,7 @@ class CustomUserChangeForm(UserChangeForm):
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'maxlength': 1500}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'availability': forms.Select(attrs={'class': 'form-select'}),
             'qts_certificate': forms.FileInput(attrs={'class': 'form-control'}),
             'dbs_certificate': forms.FileInput(attrs={'class': 'form-control'}),
             'referee1_name': forms.TextInput(attrs={'class': 'form-control'}),
